@@ -11,6 +11,9 @@ import java.net.*;
 
 public class YacPac
 {
+  private ObjectInputStream input;
+  private ObjectOutputStream output;
+  
   public static void main(String[] args)
   {
     int rc;
@@ -61,7 +64,9 @@ public class YacPac
     System.out.println("put <filename>: put a file on the yacPac");
     System.out.println("get <filename>: get a file from the yacPac");
     System.out.println("ls : list your files.");
+    System.out.println("rm  <filename> : delete a file off the yacPac");
     System.out.println("help : list commands.");
     return 0;
   } //yacHelp
+  
 }

@@ -10,10 +10,19 @@ import java.io.*;
 public class YacRequest
 {
   private YacOp op;
-  private 
+  private String filename;
+  private String owner;
+  private FileInputStream fileInput;
+  
   public YacRequest(YacOp op, String arg)
   {
     this.op = op;
+    this.filename = arg;
+    try
+    {
+      fileInput = new FileInputStream("yacpac.user");
+      
+    
   } // Constructor
 
 } // YacRequest

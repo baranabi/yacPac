@@ -1,16 +1,16 @@
 import java.io.*;
 import java.net.*;
 
-public class YacThread extends Thread
+public class PacThread extends Thread
 {
-  private Socket yacSock;
+  private Socket pacSock;
   private String   owner;
   private ObjectInputStream input;
   private ObjectOutputStream output;
 
-  public YacThread(Socket s)
+  public PacThread(Socket s)
   {
-    this.yacSock = s;
+    this.pacSock = s;
     try 
     {
       this.input  = new  ObjectInputStream(this.yacSock.getInputStream());
