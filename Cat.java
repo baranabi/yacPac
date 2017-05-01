@@ -10,7 +10,7 @@ public class Cat
     
     try
     {
-      listen = new ServerSocket(9999,5);
+      listen = new ServerSocket(Yac.CAT_PORT,Yac._BACKLOG);
 
       while (true)
       {

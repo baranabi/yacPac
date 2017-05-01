@@ -95,14 +95,19 @@ public class Yac
     private String   owner;
     private ObjectInputStream input;
     private ObjectOutputStream output;
+    
+    private ObjectInputStream fromCat;
+    private ObjectOutputStream  toCat;
   
     public YacThread(Socket s)
     {
       this.yacSock = s;
       try 
       {
-        this.input  = new  ObjectInputStream(this.yacSock.getInputStream());
-        this.output = new ObjectOutputStream(this.yacSock.getOutputStream());
+        this.input   = new   ObjectInputStream(this.yacSock.getInputStream());
+        this.output  = new ObjectOutputStream(this.yacSock.getOutputStream());
+        this.fromCat = new   ObjectInputStream(this.catSock.getInputStream());
+        this.toCat   = new ObjectOutputStream(this.catSock.getOutputStream());
       }
       catch (IOException e)
       {
@@ -117,17 +122,30 @@ public class Yac
       {
         YacRequest yacReq = (YacRequest) input.readObject();
         YacOp op = yacReq.getOp();
+        CatRequest catReq;
+        CatReply   catRep;
         if (op == YacOp.PUT)
         {
+          catReq = new CatRequest(CatOp.CAT_PUT, yacReq.getFileName(),
+            yacReq.getOwner(), yacReq.getSize());
+          
         }
         else if (op == YacOp.GET)
         {
+          catReq = new CatRequest(CatOp.CAT_GET, yacReq.getFileName(), 
+            yacReq.getOwner(), 0);
+          toCat.writeObject(catReq); // send request to Cat
         }
         else if (op == YacOp.LS)
         {
+          catReq = new CatRequest(CatOp.CAT_LS, null, yacReq.getOwner(), 0);
+          toCat.writeObject(catReq);
         }
         else if (op == YacOp.RM)
         {
+          catReq = new CatRequest(CatOp.CAT_RM, yacReq.getFileName(),
+            yacReq.getOwner(), 0);
+          toCat.writeObject(catReq);
         }
         else
         {

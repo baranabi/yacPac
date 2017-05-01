@@ -82,24 +82,29 @@ public class YacPac
     cleanUpAndQuit(retMsg, rc);
   } // main
   
-  
+  private YacRequest yacReq;
+  private YacReply   yacRep;
   private int yacPut(String name)
   {
+    yacReq = new YacRequest(YacOp.PUT , name);
     return 0;
   } //yacPut
   
   private int yacGet(String name)
   {
+    yacReq = new YacRequest(YacOp.GET , name);
     return 0;
   } //yacGet
   
   private int yacRm(String name)
   {
+    yacReq = new YacRequest(YacOp.RM , name);
     return 0;
   } //yacRm
   
   private int yacLs()
   {
+    yacReq = new YacRequest(YacOp.LS , null);
     return 0;
   }
   

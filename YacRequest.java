@@ -14,6 +14,7 @@ public class YacRequest implements Serializable
   private String owner;
   private FileInputStream fileInput;
   private byte[] data;
+  private int size;
 
   public YacRequest(YacOp op, String arg)
   {
@@ -35,7 +36,7 @@ public class YacRequest implements Serializable
         System.err.println(e);
         System.exit(1);
         
-      }
+      } // trycatch for reading in file data
     }    
   } // Constructor
 
@@ -59,6 +60,11 @@ public class YacRequest implements Serializable
   public byte[] getData()
   {
     return this.data;
+  }
+  
+  public int getSize()
+  {
+    return this.size;
   }
 
 } // YacRequest
