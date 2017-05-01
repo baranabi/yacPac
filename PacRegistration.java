@@ -5,5 +5,8 @@
  * 
  * */
 
-public class PacRegister implements YacPacket
-{}
+public class PacRegistration implements YacPacket
+{
+  private String name; 
+  public PacRegistration(String name);
+}
