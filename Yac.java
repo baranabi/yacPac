@@ -17,16 +17,23 @@ public class Yac
   
   private List<YacThread> clients = 
     Collections.synchronizedList(new ArrayList<YacThread>());
-  private List<PacThread>  pacs = 
-    Collections.synchronizedList(new ArrayList<PacThread>());
+  private List<PacEntry>  pacs = 
+    Collections.synchronizedList(new ArrayList<PacEntry>());
   
 
   private Socket catSock; 
 
   public static void main(String[] args) throws IOException
   {
-    new Yac().start();
-  }
+    try 
+    {
+      new Yac().start();
+    }
+    catch (IOException e)
+    {
+      System.err.println(e);
+    }
+  } // main
   
   private void start()
   {
@@ -69,15 +76,20 @@ public class Yac
        {
          public void run()
          {
-           System.out.println();
-           System.out.println("Yac: waiting for pac registration");
+           while (true)
+           {
+             System.out.println();
+             System.out.println("Yac: waiting for pac registration");
 
-           Socket pacSock = pacListen.accept();
+             Socket pacSock = pacListen.accept();
 
-           System.out.println("Yac: creating pac thread");
-           PacThread pacThr = new PacThread(pacSock);
-           pacThr.start();
-           pacs.add(pacThr); 
+             System.out.println("Yac: creating pac thread");
+           
+             ObjectInputStream pacReg = new ObjectInputStream(pacSock.getInputStream());
+
+             pacThr.start();
+             pacs.add(pacThr);
+           } 
          }
        }).start(); // this thread listens for pac registrations. 
 
@@ -86,8 +98,22 @@ public class Yac
     {
       System.err.println(e);
     }
-  } // Main
-
+  } // start
+  
+  public class PacEntry  // our pacs list is a collection of these entries. 
+  {
+    private Socket s;
+    private String name;
+    
+    public PacEntry(Socket sock, String pacName)
+    {
+      this.s = sock;
+      this.name = pacName;
+    } // entry constructor
+    // getters
+    public Socket getSocket()  { return s; }
+    public String getName() { return name; }
+  }
 
   public class YacThread extends Thread
   {
@@ -128,7 +154,8 @@ public class Yac
         {
           catReq = new CatRequest(CatOp.CAT_PUT, yacReq.getFileName(),
             yacReq.getOwner(), yacReq.getSize());
-          
+          toCat.writeObject(catReq);
+          catRep = (CatReply) fromCat.readObject();
         }
         else if (op == YacOp.GET)
         {
@@ -159,16 +186,4 @@ public class Yac
       }
     }
   } // YacThread
-  public class PacThread extends Thread
-  {
-    private Socket pacSock;
-    public PacThread(Socket s)
-    {
-      this.pacSock = s;
-    }
-
-    public void run()
-    {
-    }
-  }
 } // Yac
