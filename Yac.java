@@ -10,6 +10,7 @@ import java.util.*;
 
 public class Yac
 {
+  public static final String ADDRESS  = "localhost";
   public static final int YAC_PORT = 4000;
   public static final int PAC_PORT = 5000;
   public static final int CAT_PORT = 6000;
@@ -20,9 +21,13 @@ public class Yac
   private List<PacEntry>  pacs = 
     Collections.synchronizedList(new ArrayList<PacEntry>());
   
+  private  ServerSocket    catListen;
+  private  ServerSocket clientListen;
+  private  ServerSocket    pacListen; 
 
   private Socket catSock; 
-
+  private ObjectInputStream fromCat;
+  private ObjectOutputStream toCat;
   public static void main(String[] args) throws IOException
   {
     try 
@@ -32,14 +37,12 @@ public class Yac
     catch (IOException e)
     {
       System.err.println(e);
+      
     }
   } // main
   
   private void start()
   {
-    ServerSocket    catListen;
-    ServerSocket clientListen;
-    ServerSocket    pacListen; 
 
     try
     {
@@ -48,6 +51,8 @@ public class Yac
       catListen     = new ServerSocket(CAT_PORT,_BACKLOG);
       System.out.println("Yac: waiting for catalog server on port " + CAT_PORT);
       catSock = catListen.accept();
+      toCat   = new ObjectOutputStream(catSock.getOutputStream());
+      fromCat = new ObjectInputStream(catSock.getInputStream());
       
       System.out.println("Yac: listening for clients on " + YAC_PORT);
       System.out.println("Yac: listening for pacs on " + PAC_PORT);
@@ -85,8 +90,12 @@ public class Yac
 
              System.out.println("Yac: creating pac thread");
            
-             ObjectInputStream pacReg = new ObjectInputStream(pacSock.getInputStream());
+             ObjectInputStream pacRegIn = new ObjectInputStream(pacSock.getInputStream());
 
+             PacRegistration   pacReg   = (PacRegistration) pacRegIn.readObject();
+
+             PacEntry newPac = new PacEntry(packSock, pacReg.getName());
+             pacRegIn.close();
              pacThr.start();
              pacs.add(pacThr);
            } 
@@ -141,6 +150,12 @@ public class Yac
       }
     } // constructor
   
+    private CatReply catMessage(CatOp c, String name, String owner, int size)
+    {
+      CatRequest catReq  = new i//CatRequest( c, name, owner, size); 
+      toCat.writeObject(catReq);
+      return (CatReply) fromCat.readObject();
+    }
     public void run()
     {
       // handle yac Requests.
@@ -148,37 +163,31 @@ public class Yac
       {
         YacRequest yacReq = (YacRequest) input.readObject();
         YacOp op = yacReq.getOp();
-        CatRequest catReq;
         CatReply   catRep;
-        if (op == YacOp.PUT)
+        if (op == YacOp.PUT) // PUT //////////////////////////////////////////////////
         {
-          catReq = new CatRequest(CatOp.CAT_PUT, yacReq.getFileName(),
+          catRep = catMessage(CatOp.CAT_PUT, yacReq.getFileName(),
             yacReq.getOwner(), yacReq.getSize());
-          toCat.writeObject(catReq);
-          catRep = (CatReply) fromCat.readObject();
         }
-        else if (op == YacOp.GET)
+        else if (op == YacOp.GET) // GET /////////////////////////////////////////////
         {
-          catReq = new CatRequest(CatOp.CAT_GET, yacReq.getFileName(), 
+          catRep = catMessage(CatOp.CAT_GET, yacReq.getFileName(), 
             yacReq.getOwner(), 0);
-          toCat.writeObject(catReq); // send request to Cat
         }
-        else if (op == YacOp.LS)
+        else if (op == YacOp.LS)  // LS //////////////////////////////////////////////
         {
-          catReq = new CatRequest(CatOp.CAT_LS, null, yacReq.getOwner(), 0);
-          toCat.writeObject(catReq);
+          catRep = catMessage(CatOp.CAT_LS, null, yacReq.getOwner(), 0);
         }
-        else if (op == YacOp.RM)
+        else if (op == YacOp.RM)  // RM //////////////////////////////////////////////
         {
-          catReq = new CatRequest(CatOp.CAT_RM, yacReq.getFileName(),
+          catRep = catMessage(CatOp.CAT_RM, yacReq.getFileName(),
             yacReq.getOwner(), 0);
-          toCat.writeObject(catReq);
+
         }
         else
         {
           System.err.println("Yac: received unknown operation request from client!");
-        }
-  
+        } 
       }
       catch (Exception e)
       {

@@ -6,8 +6,13 @@
 import java.io.*;
 import java.net.*;
 
+
+
+
 public class Pac
 {
+  private ObjectInputStream fromYac;
+  private ObjectOutputStream  toYac;
 
   public static void main(String[] args)
   {
@@ -29,8 +34,13 @@ public class Pac
 
     try
     {
-      listen = new ServerSocket(9999,5);
+      listen = new ServerSocket(Yac.PAC_PORT, Yac._BACKLOG);
+     
+      // register pac w/ yac
+
       
+
+      // enter server loop
       while (true)
       {
         System.out.println();

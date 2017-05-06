@@ -3,15 +3,17 @@ import java.net.*;
 
 public class Cat
 {
+  private ObjectInputStream fromYac;
+  private ObjectOutputStream toYac;
+
   public static void main(String args[])
   {
-    ServerSocket listen;
     Socket socket;
     
     try
     {
-      listen = new ServerSocket(Yac.CAT_PORT,Yac._BACKLOG);
-
+      socket = new Socket(Yac.ADDRESS, Yac.CAT_PORT);
+      
       while (true)
       {
       }
@@ -21,11 +23,5 @@ public class Cat
       System.err.println(e);
     }
   } // main
-  
-  
-  private void 
-  
-  
-  
   
 } // Cat

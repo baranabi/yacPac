@@ -10,7 +10,9 @@ public class YacReply extends Serializable
   {
     this.status = status;
     this.data   = data;
-  }
+  } // constructor
+
+  // getters
 
   public int getStatus()
   {
@@ -21,4 +23,9 @@ public class YacReply extends Serializable
   {
     return this.data;
   }
-}
+
+  public String getMessage()
+  {
+    return new String(this.data);
+  }
+} //yacReply

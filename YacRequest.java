@@ -20,7 +20,8 @@ public class YacRequest implements Serializable
   {
     this.op = op;
     this.filename = arg;
-    this.owner = "Zap";
+    this.owner = YacPacOwner.OWNER;
+    this.size  = 0;
     if (this.filename != null)
     {
       try
@@ -28,6 +29,7 @@ public class YacRequest implements Serializable
         File inFile = new File(this.filename);
         fileInput = new FileInputStream(inFile);
         int byteLength = (int) inFile.length();
+        this.size = byteLength;
         data = new byte[byteLength];
         fileInput.read(data,0,byteLength);
       }
