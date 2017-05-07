@@ -137,11 +137,18 @@ public class YacPac
     return doOp();    
   } // yacLs
 
-  private int doOp()
+  private int doOp() 
   {
     yacReq = new YacRequest(op, filename);
-    output.writeObject(yacReq);
-    yacRep = (yacReply) input.readObject();
+    try 
+    {
+      output.writeObject(yacReq);
+      yacRep = (YacReply) input.readObject();
+    }
+    catch (Exception e)
+    {
+      return -1;
+    }
     if (yacRep.getStatus() != 0)
     {
       System.err.println(yacRep.getMessage());

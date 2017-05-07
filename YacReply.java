@@ -1,7 +1,7 @@
 
 import java.io.*;
 
-public class YacReply extends Serializable
+public class YacReply implements Serializable
 {
   private int status;
   private byte[] data;

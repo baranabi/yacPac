@@ -28,7 +28,7 @@ public class Yac
   private Socket catSock; 
   private ObjectInputStream fromCat;
   private ObjectOutputStream toCat;
-  public static void main(String[] args) throws IOException
+  public static void main(String[] args) 
   {
     try 
     {
@@ -37,11 +37,10 @@ public class Yac
     catch (IOException e)
     {
       System.err.println(e);
-      
     }
   } // main
   
-  private void start()
+  private void start() throws IOException
   {
 
     try
@@ -57,23 +56,26 @@ public class Yac
       System.out.println("Yac: listening for clients on " + YAC_PORT);
       System.out.println("Yac: listening for pacs on " + PAC_PORT);
 
-
       (new Thread()
       {
-         public void run()
+         public void run() 
          {
            while (true)
            {
+             try
+             {
              System.out.println();
              System.out.println("Yac: waiting for client connection");
-
              Socket clientSock = clientListen.accept();
-
              System.out.println("Yac: creating thread for client request");
-
              YacThread yacThr = new YacThread(clientSock);
              yacThr.start();
              clients.add(yacThr);
+             }
+             catch (Exception e)
+             {
+               System.err.println("Yac: " + e);
+             }
            }
          }
       }).start(); // this thread listens for client requests.
@@ -83,21 +85,18 @@ public class Yac
          {
            while (true)
            {
-             System.out.println();
-             System.out.println("Yac: waiting for pac registration");
-
-             Socket pacSock = pacListen.accept();
-
-             System.out.println("Yac: creating pac thread");
-           
-             ObjectInputStream pacRegIn = new ObjectInputStream(pacSock.getInputStream());
-
-             PacRegistration   pacReg   = (PacRegistration) pacRegIn.readObject();
-
-             PacEntry newPac = new PacEntry(packSock, pacReg.getName());
-             pacRegIn.close();
-             pacThr.start();
-             pacs.add(pacThr);
+             try
+             {
+               System.out.println();
+               System.out.println("Yac: waiting for pac registration");
+               Socket pacSock = pacListen.accept();
+               System.out.println("Yac: creating pac thread");
+               ObjectInputStream pacRegIn = new ObjectInputStream(pacSock.getInputStream());
+               PacRegistration   pacReg   = (PacRegistration) pacRegIn.readObject();
+               PacEntry newPac = new PacEntry(pacSock, pacReg.getName());
+               pacRegIn.close();
+             }
+             catch (Exception e) { System.err.print(e); }
            } 
          }
        }).start(); // this thread listens for pac registrations. 
@@ -141,8 +140,8 @@ public class Yac
       {
         this.input   = new   ObjectInputStream(this.yacSock.getInputStream());
         this.output  = new ObjectOutputStream(this.yacSock.getOutputStream());
-        this.fromCat = new   ObjectInputStream(this.catSock.getInputStream());
-        this.toCat   = new ObjectOutputStream(this.catSock.getOutputStream());
+        this.fromCat = new        ObjectInputStream(catSock.getInputStream());
+        this.toCat   = new      ObjectOutputStream(catSock.getOutputStream());
       }
       catch (IOException e)
       {
@@ -152,9 +151,16 @@ public class Yac
   
     private CatReply catMessage(CatOp c, String name, String owner, int size)
     {
-      CatRequest catReq  = new i//CatRequest( c, name, owner, size); 
-      toCat.writeObject(catReq);
-      return (CatReply) fromCat.readObject();
+      try
+      {
+        CatRequest catReq  = new CatRequest( c, name, owner, size); 
+        toCat.writeObject(catReq);
+        return (CatReply) fromCat.readObject();
+      }
+      catch (Exception e)
+      {
+        return new CatReply(-1, e.toString());
+      }
     }
     public void run()
     {
@@ -182,7 +188,6 @@ public class Yac
         {
           catRep = catMessage(CatOp.CAT_RM, yacReq.getFileName(),
             yacReq.getOwner(), 0);
-
         }
         else
         {

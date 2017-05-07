@@ -4,10 +4,11 @@
  * when the pac server sets up. 
  * 
  * */
-import java.io.*
+import java.io.*;
+
 public class PacRegistration implements Serializable
 {
   private String name; 
   public PacRegistration(String name) { this.name = name; }
-  private String getName() { return this.name; }
+  public String getName() { return this.name; }
 }

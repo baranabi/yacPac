@@ -3,9 +3,9 @@ import java.io.*;
 public class CatReply implements Serializable
 {
   private int status;
-  private int message;
+  private String message;
 
-  public CatReply( int status, int message)
+  public CatReply( int status, String message)
   {
     this.status = status;
     this.message = message;
