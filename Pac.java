@@ -12,10 +12,12 @@ public class Pac
   private ObjectOutputStream  toYac;
   private String pacName;
   private PacRequest pacReq;
+  private PacReply   pacRep;
+  private  Socket    yacSock;
 
   public static void main(String[] args)
   {
-    new Pac().start();
+    new Pac().start(args);
   }
   public void start(String[] args)
   {
@@ -34,15 +36,11 @@ public class Pac
       System.exit(1);
     }
 
-    ServerSocket listen;
-    Socket socket;
-
-
     try
     {
       yacSock  = new Socket(Yac.ADDRESS, Yac.PAC_PORT);
-      fromYac = new ObjectInputStream(listen.getInputStream());
-      toYac   = new ObjectOutputStream(listen.getOutputStream());
+      fromYac = new ObjectInputStream(yacSock.getInputStream());
+      toYac   = new ObjectOutputStream(yacSock.getOutputStream());
 
       // register pac w/ yac
       PacRegistration pacReg = new PacRegistration(pacName); 
@@ -74,7 +72,7 @@ public class Pac
     else { return null;} //<- this shouldn't happen! 
   }
 
-  private PacReply pacPut() throws IOException
+  private PacReply pacPut() 
   {
     System.out.println("putting " + pacReq.getName());
     try
@@ -91,7 +89,7 @@ public class Pac
     }
   }
 
-  private PacReply pacGet() throws IOException
+  private PacReply pacGet()
   {
     System.out.println("getting " + pacReq.getName());
     try

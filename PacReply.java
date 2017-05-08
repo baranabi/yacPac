@@ -11,6 +11,6 @@ public class PacReply implements Serializable
     this.data   = data;
   }
 
-  public int getStatus  { return this.status; }
-  public byte[] getData { return   this.data; }
+  public int getStatus()  { return this.status; }
+  public byte[] getData() { return   this.data; }
 }

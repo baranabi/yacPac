@@ -64,13 +64,13 @@ public class Yac
            {
              try
              {
-             System.out.println();
-             System.out.println("Yac: waiting for client connection");
-             Socket clientSock = clientListen.accept();
-             System.out.println("Yac: creating thread for client request");
-             YacThread yacThr = new YacThread(clientSock);
-             yacThr.start();
-             clients.add(yacThr);
+               System.out.println();
+               System.out.println("Yac: waiting for client connection");
+               Socket clientSock = clientListen.accept();
+               System.out.println("Yac: creating thread for client request");
+               YacThread yacThr = new YacThread(clientSock);
+               yacThr.start();
+               clients.add(yacThr);
              }
              catch (Exception e)
              {
@@ -94,13 +94,14 @@ public class Yac
                ObjectInputStream pacRegIn = new ObjectInputStream(pacSock.getInputStream());
                PacRegistration   pacReg   = (PacRegistration) pacRegIn.readObject();
                PacEntry newPac = new PacEntry(pacSock, pacReg.getName());
+               toCat.writeObject(new CatRequest(CatOp.CAT_REGPAC, pacReg.getName(), null, 0));
+
                pacRegIn.close();
              }
              catch (Exception e) { System.err.print(e); }
            } 
          }
        }).start(); // this thread listens for pac registrations. 
-
     }
     catch (Exception e)
     {
@@ -170,34 +171,106 @@ public class Yac
         YacRequest yacReq = (YacRequest) input.readObject();
         YacOp op = yacReq.getOp();
         CatReply   catRep;
+        YacReply   yacRep;
+        PacRequest pacReq;
+        PacReply   pacRep;
+
+        ObjectOutputStream toPac;
+        ObjectInputStream fromPac;
         if (op == YacOp.PUT) // PUT //////////////////////////////////////////////////
         {
           catRep = catMessage(CatOp.CAT_PUT, yacReq.getFileName(),
             yacReq.getOwner(), yacReq.getSize());
+          if (catRep.getStatus() != 0) 
+          {
+            yacRep =  new YacReply(catRep.getStatus(), catRep.getMessage().getBytes());
+          }
+          else
+          {
+            pacReq = new PacRequest(PacOp.RM, yacReq.getFileName(), yacReq.getData());
+            PacEntry target = getPac(catRep.getMessage());
+            toPac = new ObjectOutputStream(target.getSocket().getOutputStream());
+            fromPac = new ObjectInputStream(target.getSocket().getInputStream());
+            toPac.writeObject(pacReq);
+            pacRep =  (PacReply) fromPac.readObject();
+            yacRep = new YacReply(pacRep.getStatus(), pacRep.getData());
+            toPac.close();
+            fromPac.close();
+          }
+          output.writeObject(yacRep);
         }
         else if (op == YacOp.GET) // GET /////////////////////////////////////////////
         {
           catRep = catMessage(CatOp.CAT_GET, yacReq.getFileName(), 
             yacReq.getOwner(), 0);
+          if (catRep.getStatus() != 0) 
+          {
+            yacRep =  new YacReply(catRep.getStatus(), catRep.getMessage().getBytes());
+          }
+          else
+          {
+            pacReq = new PacRequest(PacOp.GET, yacReq.getFileName(), null);
+            PacEntry target = getPac(catRep.getMessage());
+            toPac = new ObjectOutputStream(target.getSocket().getOutputStream());
+            fromPac = new ObjectInputStream(target.getSocket().getInputStream());
+            toPac.writeObject(pacReq);
+            pacRep = (PacReply) fromPac.readObject();
+            yacRep = new YacReply(pacRep.getStatus(), pacRep.getData());
+            toPac.close();
+            fromPac.close();
+          }
+          output.writeObject(yacRep);
         }
         else if (op == YacOp.LS)  // LS //////////////////////////////////////////////
         {
           catRep = catMessage(CatOp.CAT_LS, null, yacReq.getOwner(), 0);
+          yacRep = new YacReply(catRep.getStatus(), catRep.getMessage().getBytes());
+          output.writeObject(yacRep);
         }
         else if (op == YacOp.RM)  // RM //////////////////////////////////////////////
         {
           catRep = catMessage(CatOp.CAT_RM, yacReq.getFileName(),
             yacReq.getOwner(), 0);
+          
+          if (catRep.getStatus() != 0) 
+          {
+            yacRep =  new YacReply(catRep.getStatus(), catRep.getMessage().getBytes());
+          }
+          else
+          {
+            pacReq = new PacRequest(PacOp.RM, yacReq.getFileName(), null);
+            PacEntry target = getPac(catRep.getMessage());
+            toPac = new ObjectOutputStream(target.getSocket().getOutputStream());
+            fromPac = new ObjectInputStream(target.getSocket().getInputStream());
+            toPac.writeObject(pacReq);
+            pacRep = (PacReply) fromPac.readObject();
+            yacRep = new YacReply(pacRep.getStatus(), pacRep.getData());
+            toPac.close();
+            fromPac.close();
+          }
+          output.writeObject(yacRep);
         }
         else
         {
           System.err.println("Yac: received unknown operation request from client!");
         } 
+        this.input.close();
+        this.output.close();
+        clients.remove(this);
       }
       catch (Exception e)
       {
         e.printStackTrace();
       }
+    }
+
+    private PacEntry getPac(String name)
+    {
+      for (PacEntry p : pacs)
+      {
+        if (p.getName().equals(name)) { return p; }
+      }
+      return null; // this shouldn't happen!
     }
   } // YacThread
 } // Yac
