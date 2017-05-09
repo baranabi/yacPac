@@ -69,6 +69,7 @@ public class Yac
                Socket clientSock = clientListen.accept();
                System.out.println("Yac: creating thread for client request");
                YacThread yacThr = new YacThread(clientSock);
+               System.out.println("Yac: starting thread");
                yacThr.start();
                clients.add(yacThr);
              }
@@ -90,13 +91,15 @@ public class Yac
                System.out.println();
                System.out.println("Yac: waiting for pac registration");
                Socket pacSock = pacListen.accept();
-               System.out.println("Yac: creating pac thread");
                ObjectInputStream pacRegIn = new ObjectInputStream(pacSock.getInputStream());
+               System.out.println("Yac: waiting for  pac message");
                PacRegistration   pacReg   = (PacRegistration) pacRegIn.readObject();
-               PacEntry newPac = new PacEntry(pacSock, pacReg.getName());
+               System.out.println("Yac: creating pacEntry");
+               PacEntry newPac = new PacEntry(pacSock, pacRegIn , pacReg.getName());
+               System.out.println("Yac: adding pac to our collection");
+               pacs.add(newPac);
+               System.out.println("Yac: messaging cat to register pac");
                toCat.writeObject(new CatRequest(CatOp.CAT_REGPAC, pacReg.getName(), null, 0));
-
-               pacRegIn.close();
              }
              catch (Exception e) { System.err.print(e); }
            } 
@@ -112,16 +115,23 @@ public class Yac
   public class PacEntry  // our pacs list is a collection of these entries. 
   {
     private Socket s;
+    private ObjectInputStream fromPac;
+    private ObjectOutputStream  toPac;
     private String name;
     
-    public PacEntry(Socket sock, String pacName)
+    public PacEntry(Socket sock, ObjectInputStream in, String pacName) throws IOException
     {
       this.s = sock;
+      this.fromPac = in;
+      this.toPac = new ObjectOutputStream(this.s.getOutputStream());
+
       this.name = pacName;
     } // entry constructor
     // getters
-    public Socket getSocket()  { return s; }
-    public String getName() { return name; }
+    public Socket getSocket()  { return this.s; }
+    public String getName() { return this.name; }
+    public ObjectInputStream getInput() { return this.fromPac; }
+    public ObjectOutputStream getOutput() { return this.toPac;  }
   }
 
   public class YacThread extends Thread
@@ -130,19 +140,15 @@ public class Yac
     private String   owner;
     private ObjectInputStream input;
     private ObjectOutputStream output;
-    
-    private ObjectInputStream fromCat;
-    private ObjectOutputStream  toCat;
-  
     public YacThread(Socket s)
     {
       this.yacSock = s;
       try 
       {
+        System.out.println("YacThread: creating i/o streams\n...from client");
         this.input   = new   ObjectInputStream(this.yacSock.getInputStream());
+        System.out.println("... to client");
         this.output  = new ObjectOutputStream(this.yacSock.getOutputStream());
-        this.fromCat = new        ObjectInputStream(catSock.getInputStream());
-        this.toCat   = new      ObjectOutputStream(catSock.getOutputStream());
       }
       catch (IOException e)
       {
@@ -152,6 +158,7 @@ public class Yac
   
     private CatReply catMessage(CatOp c, String name, String owner, int size)
     {
+      System.out.println("Yac: messaging cat");
       try
       {
         CatRequest catReq  = new CatRequest( c, name, owner, size); 
@@ -179,28 +186,30 @@ public class Yac
         ObjectInputStream fromPac;
         if (op == YacOp.PUT) // PUT //////////////////////////////////////////////////
         {
+          System.out.println("Yac: PUT");
           catRep = catMessage(CatOp.CAT_PUT, yacReq.getFileName(),
             yacReq.getOwner(), yacReq.getSize());
+          System.out.println("Yac: got reply from cat !");
           if (catRep.getStatus() != 0) 
           {
             yacRep =  new YacReply(catRep.getStatus(), catRep.getMessage().getBytes());
           }
           else
           {
-            pacReq = new PacRequest(PacOp.RM, yacReq.getFileName(), yacReq.getData());
+            System.out.println("Yac: got cat info, messaging appropriate pac");
+            pacReq = new PacRequest(PacOp.PUT, yacReq.getFileName(), yacReq.getData());
             PacEntry target = getPac(catRep.getMessage());
-            toPac = new ObjectOutputStream(target.getSocket().getOutputStream());
-            fromPac = new ObjectInputStream(target.getSocket().getInputStream());
+            toPac = target.getOutput();
+            fromPac = target.getInput();
             toPac.writeObject(pacReq);
             pacRep =  (PacReply) fromPac.readObject();
             yacRep = new YacReply(pacRep.getStatus(), pacRep.getData());
-            toPac.close();
-            fromPac.close();
           }
           output.writeObject(yacRep);
         }
         else if (op == YacOp.GET) // GET /////////////////////////////////////////////
         {
+          System.out.println("Yac: GET");
           catRep = catMessage(CatOp.CAT_GET, yacReq.getFileName(), 
             yacReq.getOwner(), 0);
           if (catRep.getStatus() != 0) 
@@ -209,26 +218,27 @@ public class Yac
           }
           else
           {
+            System.out.println("Yac: got cat info, messaging appropriate pac");
             pacReq = new PacRequest(PacOp.GET, yacReq.getFileName(), null);
             PacEntry target = getPac(catRep.getMessage());
-            toPac = new ObjectOutputStream(target.getSocket().getOutputStream());
-            fromPac = new ObjectInputStream(target.getSocket().getInputStream());
+            toPac = target.getOutput();
+            fromPac = target.getInput();
             toPac.writeObject(pacReq);
             pacRep = (PacReply) fromPac.readObject();
             yacRep = new YacReply(pacRep.getStatus(), pacRep.getData());
-            toPac.close();
-            fromPac.close();
           }
           output.writeObject(yacRep);
         }
         else if (op == YacOp.LS)  // LS //////////////////////////////////////////////
         {
+          System.out.println("Yac: LS");
           catRep = catMessage(CatOp.CAT_LS, null, yacReq.getOwner(), 0);
           yacRep = new YacReply(catRep.getStatus(), catRep.getMessage().getBytes());
           output.writeObject(yacRep);
         }
         else if (op == YacOp.RM)  // RM //////////////////////////////////////////////
         {
+          System.out.println("Yac: RM");
           catRep = catMessage(CatOp.CAT_RM, yacReq.getFileName(),
             yacReq.getOwner(), 0);
           
@@ -238,22 +248,22 @@ public class Yac
           }
           else
           {
+            System.out.println("Yac: got cat info, messaging appropriate pac");
             pacReq = new PacRequest(PacOp.RM, yacReq.getFileName(), null);
             PacEntry target = getPac(catRep.getMessage());
-            toPac = new ObjectOutputStream(target.getSocket().getOutputStream());
-            fromPac = new ObjectInputStream(target.getSocket().getInputStream());
+            toPac = target.getOutput();
+            fromPac = target.getInput();
             toPac.writeObject(pacReq);
             pacRep = (PacReply) fromPac.readObject();
             yacRep = new YacReply(pacRep.getStatus(), pacRep.getData());
-            toPac.close();
-            fromPac.close();
           }
           output.writeObject(yacRep);
         }
         else
         {
           System.err.println("Yac: received unknown operation request from client!");
-        } 
+        }
+        System.out.println("Yac: Completed request! Closing streams and killing thread"); 
         this.input.close();
         this.output.close();
         clients.remove(this);

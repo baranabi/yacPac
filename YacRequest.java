@@ -12,7 +12,6 @@ public class YacRequest implements Serializable
   private YacOp op;
   private String filename;
   private String owner;
-  private FileInputStream fileInput;
   private byte[] data;
   private int size;
 
@@ -22,12 +21,13 @@ public class YacRequest implements Serializable
     this.filename = arg;
     this.owner = YacPacOwner.OWNER;
     this.size  = 0;
-    if (this.filename != null)
+    this.data = null;
+    if (this.filename != null && this.op == YacOp.PUT)
     {
       try
       {
         File inFile = new File(this.filename);
-        fileInput = new FileInputStream(inFile);
+        FileInputStream fileInput = new FileInputStream(inFile);
         int byteLength = (int) inFile.length();
         this.size = byteLength;
         data = new byte[byteLength];

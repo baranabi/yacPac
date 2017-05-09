@@ -38,17 +38,24 @@ public class Pac
 
     try
     {
+      System.out.println("Pac: connecting to Yac and creating streams");
       yacSock  = new Socket(Yac.ADDRESS, Yac.PAC_PORT);
-      fromYac = new ObjectInputStream(yacSock.getInputStream());
+      System.out.println("Pac: ... toYac");
       toYac   = new ObjectOutputStream(yacSock.getOutputStream());
 
       // register pac w/ yac
+      System.out.println("Pac: registering w/ Yac");
       PacRegistration pacReg = new PacRegistration(pacName); 
       toYac.writeObject(pacReg);
+      //toYac.close();
 
+      System.out.println("Pac: entering main server loop...");
       // enter server loop
+      fromYac = new ObjectInputStream(yacSock.getInputStream());
       while (true)
       {
+
+        //ServerSocket yacListen = new ServerSocket(Yac.PAC_PORT, Yac._BACKLOG);
         System.out.println();
         System.out.println("Pac: waiting for request");
         pacReq = (PacRequest) fromYac.readObject();

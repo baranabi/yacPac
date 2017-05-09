@@ -78,8 +78,10 @@ public class YacPac
         String owner  = command;
         FileWriter fw = new FileWriter("YacPacOwner.java");
         BufferedWriter bw = new BufferedWriter(fw);   // MARVEL AT THIS KLUDGE
-        bw.write("public class YacPacOwner { public static final String OWNER = " + command + ";}");
+        bw.write("public class YacPacOwner { public static final String OWNER = \"" + command + "\";}");
         System.out.println("SET CURRENT OWNER TO " + owner);
+        bw.close();
+        fw.close();
       }
       catch (IOException e)
       {
@@ -151,12 +153,16 @@ public class YacPac
     }
     if (yacRep.getStatus() != 0)
     {
-      System.err.println(yacRep.getMessage());
+      System.err.println("ERROR!");
       return yacRep.getStatus();
     }
     else
     {
-      System.out.println(yacRep.getMessage());
+      if(yacRep.getData() != null)
+      {
+        System.out.println(yacRep.getMessage());
+      } 
+      else { System.out.println("operation successful!");}
       return 0;
     }
   }

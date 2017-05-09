@@ -39,6 +39,7 @@ public class Cat
           System.out.println();
           System.out.println("Cat: waiting for request...");
           catReq = (CatRequest) fromYac.readObject();
+          this.op = catReq.getOp();
 
           System.out.println("Cat: got request!");
           
@@ -49,6 +50,8 @@ public class Cat
           }
           else
           {
+            System.out.println("Cat: doing operation");
+
             catRep = doOp();
             toYac.writeObject(catRep);
           }
@@ -70,15 +73,16 @@ public class Cat
   private   PacEntry nextPac;
   private CatReply doOp()
   {
-    if (op == CatOp.CAT_PUT)      { return catPut(); }
-    else if (op == CatOp.CAT_GET) { return catGet(); }
-    else if  (op == CatOp.CAT_RM) { return  catRm(); }
-    else if  (op == CatOp.CAT_LS) { return  catLs(); }
-    else { return null; } // this shouldn't happen!
+    if (this.op == CatOp.CAT_PUT)      { return catPut(); }
+    else if (this.op == CatOp.CAT_GET) { return catGet(); }
+    else if  (this.op == CatOp.CAT_RM) { return  catRm(); }
+    else if  (this.op == CatOp.CAT_LS) { return  catLs(); }
+    else { return new CatReply(-1, "OP NOT RECOGNIZED"); } // this shouldn't happen!
   }
 
   private CatReply catPut()
   {
+    System.out.println("....PUT");
     currOwner = findOwner();
     if (currOwner == null) 
     { 
@@ -86,8 +90,10 @@ public class Cat
       currOwner = new OwnerEntry(catReq.getOwner()); 
       owners.add(currOwner);
     }
+    System.out.println("Cat: finding location for file...");
     nextPac = getNextPac();
 
+    System.out.println("Cat: adding file to cataloc...");
     int rc = currOwner.addFile(
         catReq.getName(), nextPac.getName(), catReq.getSize());
     if (rc != 0) 
@@ -98,6 +104,7 @@ public class Cat
 
   private CatReply catGet()
   {
+    System.out.println("....GET");
     currOwner = findOwner();
     if (currOwner == null)
     {
@@ -113,6 +120,7 @@ public class Cat
 
   private CatReply catLs()
   {
+    System.out.println("....LS");
     currOwner = findOwner();
     if (currOwner == null)
     {
@@ -123,6 +131,7 @@ public class Cat
 
   private CatReply catRm()
   {
+    System.out.println("....RM");
     currOwner = findOwner();
     if (currOwner == null)
     {
@@ -134,6 +143,7 @@ public class Cat
       return new CatReply( -1, "Cat: file doesn't exist! unable to rm.");
     }
     String location = target.getLocation();
+    System.out.println("Deleting file " + catReq.getName());
     int rc = currOwner.delFile(catReq.getName());
     if (rc != 0) 
     { return new CatReply(0, "Cat: unable to delete entry from cat"); }
@@ -206,7 +216,7 @@ public class Cat
 
     public int addFile(String filename, String location, int size)
     {
-      if (!hasFile(filename)) { return -1;}
+      if (hasFile(filename)) { return -1;}
       FileEntry newFileEntry = new FileEntry(this.name, filename, location, size);
       this.files.add(newFileEntry);
       return 0;
