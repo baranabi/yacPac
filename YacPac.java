@@ -61,6 +61,7 @@ public class YacPac
         System.exit(1);
       }
       sessionInit();
+      rc = yacGet(args[1]);
     }
     else if (command.equals("rm"))
     {
@@ -70,6 +71,7 @@ public class YacPac
         System.exit(1);
       }
       sessionInit();
+      rc = yacRm(args[1]);
     }
     else
     {

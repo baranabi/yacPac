@@ -143,7 +143,7 @@ public class Cat
       return new CatReply( -1, "Cat: file doesn't exist! unable to rm.");
     }
     String location = target.getLocation();
-    System.out.println("Deleting file " + catReq.getName());
+    System.out.println("Deleting file " + catReq.getName() + " on " + location);
     int rc = currOwner.delFile(catReq.getName());
     if (rc != 0) 
     { return new CatReply(0, "Cat: unable to delete entry from cat"); }
