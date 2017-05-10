@@ -12,3 +12,6 @@ Pac : Pac.java
 Cat : Cat.java
 	javac Cat.java
 
+
+clean:
+	rm *.class

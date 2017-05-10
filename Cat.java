@@ -209,7 +209,7 @@ public class Cat
 
     public String listFiles()
     {
-      String retStr = this.name +"'s files\n ";
+      String retStr = this.name +"'s files\n";
       for (FileEntry f : this.files) { retStr += f.toString(); }
       return retStr;
     }

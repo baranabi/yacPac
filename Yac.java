@@ -10,7 +10,7 @@ import java.util.*;
 
 public class Yac
 {
-  public static final String ADDRESS  = "localhost";
+  public static final String ADDRESS  = "localhost"; // when using on multimachines, replace w/ host name eg pug, afghan...
   public static final int YAC_PORT = 4000;
   public static final int PAC_PORT = 5000;
   public static final int CAT_PORT = 6000;
