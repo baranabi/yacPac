@@ -192,6 +192,7 @@ public class Yac
           System.out.println("Yac: got reply from cat !");
           if (catRep.getStatus() != 0) 
           {
+            System.out.println("Yac: cat reported an error! Messaging client..");
             yacRep =  new YacReply(catRep.getStatus(), catRep.getMessage().getBytes());
           }
           else
@@ -201,8 +202,10 @@ public class Yac
             PacEntry target = getPac(catRep.getMessage());
             toPac = target.getOutput();
             fromPac = target.getInput();
+            System.out.println("Yac: writing request to pac " + catRep.getMessage());
             toPac.writeObject(pacReq);
             pacRep =  (PacReply) fromPac.readObject();
+            System.out.println("Yac: packing client reply..");
             yacRep = new YacReply(pacRep.getStatus(), pacRep.getData());
           }
           output.writeObject(yacRep);
@@ -253,6 +256,7 @@ public class Yac
             PacEntry target = getPac(catRep.getMessage());
             toPac = target.getOutput();
             fromPac = target.getInput();
+            System.out.println("Yac: writing request to pac " + catRep.getMessage());
             toPac.writeObject(pacReq);
             pacRep = (PacReply) fromPac.readObject();
             yacRep = new YacReply(pacRep.getStatus(), pacRep.getData());

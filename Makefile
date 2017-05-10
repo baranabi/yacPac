@@ -1,4 +1,4 @@
-
+all: YacPac Yac Pac Cat
 
 YacPac : YacPac.java
 	javac YacPac.java

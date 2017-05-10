@@ -227,7 +227,7 @@ public class Cat
       if (!hasFile(filename)) { return -1;}
       for (FileEntry f : files)
       {
-        if (f.getName().equals(name)) { this.files.remove(f); return 0; }
+        if (f.getName().equals(filename)) { this.files.remove(f); return 0; }
       }
       return -1; // this shouldn't Happen!
     }

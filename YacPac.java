@@ -160,7 +160,8 @@ public class YacPac
     }
     else
     {
-      if(yacRep.getData() != null)
+      if (op == YacOp.GET) { System.out.println("retrieved " + filename); }
+      else if(yacRep.getData() != null)
       {
         System.out.println(yacRep.getMessage());
       } 
